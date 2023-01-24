@@ -19,6 +19,6 @@ ansible-playbook -i inventory.cfg playbook.yaml
         <img src="https://www.vectorlogo.zone/logos/vagrantup/vagrantup-icon.svg" alt="vagrant" width="40" height="40"/>
     </a>
     <a href="https://www.ansible.com/" target="_blank" rel="noreferrer">
-        <img src="https://www.vectorlogo.zone/util/preview.html?image=/logos/ansible/ansible-icon.svg" alt="ansible" width="40" height="40"/>
+        <img src="https://www.vectorlogo.zone/logos/ansible/ansible-icon.svg" alt="ansible" width="40" height="40"/>
     </a>
 </p>
