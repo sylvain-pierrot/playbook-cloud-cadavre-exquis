@@ -1,5 +1,6 @@
 <h3 align="center">Playbook to run Cluster Multi-Machine K3s</h3>
-## Run playbook
+
+<h3 align="left">Run playbook:</h3>
 
 ```bash
 ansible-playbook -i inventory.cfg playbook.yaml
