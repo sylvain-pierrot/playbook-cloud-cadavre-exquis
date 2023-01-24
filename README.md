@@ -1,9 +1,17 @@
 <h3 align="center">Playbook to run Cluster Multi-Machine K3s</h3>
 
+<h3 align="left">Warning !!! Your **~/.kube/config** will be overwritten (and not added) by the new K3s cluster config</h3>
+
 <h3 align="left">Run playbook:</h3>
 
 ```bash
 ansible-playbook -i inventory.cfg playbook.yaml
+```
+
+<h3 align="left">Destroy cluster:</h3>
+
+```bash
+vagrant destroy -f
 ```
 
 <h3 align="left">Languages and Tools:</h3>

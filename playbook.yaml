@@ -3,7 +3,7 @@
   connection: local
   gather_facts: false
   vars:
-    - PATH: /home/pierrots/Atos/ansible
+    - PATH: /home/pierrots/Atos/ansible/playbook-cloud-cadavre-exquis
     - IP_MASTER: "192.168.50.10"
 
   tasks:
