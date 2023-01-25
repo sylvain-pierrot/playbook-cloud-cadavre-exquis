@@ -75,7 +75,8 @@
 
     ## Main tasks
     - name: Provision 3 VMs
-      command: vagrant up
+      command: |
+        vagrant up
       args:
         chdir: "{{ PATH }}"
 
