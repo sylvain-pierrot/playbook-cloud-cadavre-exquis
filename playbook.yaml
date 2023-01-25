@@ -8,70 +8,70 @@
 
   tasks:
     ## Checks install
-    # vagrant
-    - name: Check if Vagrant is installed
-      command: vagrant --version
-      register: vagrant_check
-      ignore_errors: true
+    # # vagrant
+    # - name: Check if Vagrant is installed
+    #   command: vagrant --version
+    #   register: vagrant_check
+    #   ignore_errors: true
 
-    - name: Install Vagrant
-      become: true
-      apt:
-        name: vagrant
-      when: vagrant_check.rc != 0
+    # - name: Install Vagrant
+    #   become: true
+    #   apt:
+    #     name: vagrant
+    #   when: vagrant_check.rc != 0
 
-    # kubectl
-    - name: Check if kubectl is installed
-      command: kubectl version --client
-      register: kubectl_check
-      ignore_errors: true
+    # # kubectl
+    # - name: Check if kubectl is installed
+    #   command: kubectl version --client
+    #   register: kubectl_check
+    #   ignore_errors: true
 
-    - name: Install kubectl
-      become: true
-      shell: |
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-      when: kubectl_check.rc != 0
+    # - name: Install kubectl
+    #   become: true
+    #   shell: |
+    #     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    #     sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    #   when: kubectl_check.rc != 0
 
-    # kubectx
-    - name: Check if kubectx is installed
-      command: kubectx -h
-      register: kubectx_check
-      ignore_errors: true
+    # # kubectx
+    # - name: Check if kubectx is installed
+    #   command: kubectx -h
+    #   register: kubectx_check
+    #   ignore_errors: true
 
-    - name: Install kubectx
-      become: true
-      apt:
-        name: kubectx
-      when: kubectx_check.rc != 0
+    # - name: Install kubectx
+    #   become: true
+    #   apt:
+    #     name: kubectx
+    #   when: kubectx_check.rc != 0
 
-    # helm
-    - name: Check if Helm is installed
-      command: helm version --client
-      register: helm_check
-      ignore_errors: true
+    # # helm
+    # - name: Check if Helm is installed
+    #   command: helm version --client
+    #   register: helm_check
+    #   ignore_errors: true
 
-    - name: Install Helm
-      become: true
-      shell: |
-        curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-        sudo apt-get install apt-transport-https --yes
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-        sudo apt-get update
-        sudo apt-get install helm
-      when: helm_check.rc != 0
+    # - name: Install Helm
+    #   become: true
+    #   shell: |
+    #     curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+    #     sudo apt-get install apt-transport-https --yes
+    #     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+    #     sudo apt-get update
+    #     sudo apt-get install helm
+    #   when: helm_check.rc != 0
 
-    # git
-    - name: Check if git is installed
-      command: git --version
-      register: git_check
-      ignore_errors: true
+    # # git
+    # - name: Check if git is installed
+    #   command: git --version
+    #   register: git_check
+    #   ignore_errors: true
 
-    - name: Install git
-      become: true
-      apt:
-        name: git
-      when: git_check.rc != 0
+    # - name: Install git
+    #   become: true
+    #   apt:
+    #     name: git
+    #   when: git_check.rc != 0
 
     ## Main tasks
     - name: Provision 3 VMs
@@ -88,25 +88,26 @@
 
     - name: Retrieve Cluster context and node-token
       shell: |
-        vagrant ssh node-1-master -c "sudo cat /var/lib/rancher/k3s/server/node-token" > ./recovery/node-token
-        vagrant ssh node-1-master -c "sudo cat /etc/rancher/k3s/k3s.yaml" > ./recovery/context
-        sed -i 's/127.0.0.1/192.168.50.10/g' ./recovery/context
+        vagrant ssh node-1-master -c "sudo cat /var/lib/rancher/k3s/server/node-token" > /tmp/tempnodetoken
+        vagrant ssh node-1-master -c "sudo cat /etc/rancher/k3s/k3s.yaml" > /tmp/tempconfig
+        sed -i 's/default/cce/g' /tmp/tempconfig
+        sed -i 's/127.0.0.1/192.168.50.10/g' /tmp/tempconfig
+        KUBECONFIG=~/.kube/config:/tmp/tempconfig kubectl config view --flatten > ~/.kube/config
       args:
         chdir: "{{ PATH }}"
-
+  
     - name: Install k3s Worker on others VMs
       shell: |
-        vagrant ssh node-2-worker -c "curl -sfL https://get.k3s.io | K3S_URL=https://{{ IP_MASTER }}:6443 K3S_TOKEN=$(cat ./recovery/node-token) sh -"
-        vagrant ssh node-3-worker -c "curl -sfL https://get.k3s.io | K3S_URL=https://{{ IP_MASTER }}:6443 K3S_TOKEN=$(cat ./recovery/node-token) sh -"
+        vagrant ssh node-2-worker -c "curl -sfL https://get.k3s.io | K3S_URL=https://{{ IP_MASTER }}:6443 K3S_TOKEN=$(cat /tmp/tempnodetoken) sh -"
+        vagrant ssh node-3-worker -c "curl -sfL https://get.k3s.io | K3S_URL=https://{{ IP_MASTER }}:6443 K3S_TOKEN=$(cat /tmp/tempnodetoken) sh -"
       args:
         chdir: "{{ PATH }}"
 
-    - name: Copy context to "~/.kube/config" on the host machine && switch to the new context
+    - name: Switch to the new context
       shell: |
-        cp ./recovery/context ~/.kube/config
-        kubectx default
-      args:
-        chdir: "{{ PATH }}"
+        rm /tmp/tempconfig
+        rm /tmp/tempnodetoken
+        kubectx cce
 
     - name: Install Calico
       shell: |
@@ -122,10 +123,10 @@
       until: nodes_status.rc == 0
       ignore_errors: true
 
-    - name: Wait for all pods to be running
+    - name: Wait for pods running --namespace=kube-system
       command: |
-        kubectl wait --for=condition=Ready --for=condition=Terminated pod --all --timeout=600s
-      retries: 30
+        kubectl wait --for=condition=Ready --namespace=kube-system --namespace pod --all
+      retries: 20
       delay: 10
       register: pods_status
       until: pods_status.rc == 0
