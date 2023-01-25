@@ -132,9 +132,9 @@
       until: pods_status.rc == 0
       ignore_errors: true
 
-    - name: Taint node Master NoSchedule
-      shell: |
-        kubectl taint node node-1-master k3s-controlplane=true:NoSchedule
+    # - name: Taint node Master NoSchedule
+    #   shell: |
+    #     kubectl taint node node-1-master k3s-controlplane=true:NoSchedule
     #     kubectl edit deployments local-path-provisioner -n kube-system
     #     kubectl edit deployments local-path-provisioner -n calico-system
     #     kubectl edit deployments local-path-provisioner -n calico-apiserver
