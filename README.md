@@ -1,18 +1,22 @@
 <h3 align="center">Playbook to run Cluster Multi-Machine K3s</h3>
 
-<h3 align="left">Deploy Cluster:</h3>
+## Application accessible locally on the ip:
+
+*192.168.50.10*
+
+## Deploy Cluster:
 
 ```bash
 bash deployClusterKube.sh
 ```
 
-<h3 align="left">Destroy cluster:</h3>
+## Destroy cluster:
 
 ```bash
 bash destroyClusterKube.sh
 ```
 
-<h3 align="left">Languages and Tools:</h3>
+## Languages and Tools:
 
 <p align="left">
     <a href="https://www.gnu.org/software/bash/" target="_blank" rel="noreferrer">

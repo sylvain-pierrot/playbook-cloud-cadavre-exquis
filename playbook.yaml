@@ -143,13 +143,9 @@
       shell: |
         git clone https://github.com/fteychene/cloud-cadavre-exquis.git
         cd cloud-cadavre-exquis
-        helm install cloud-cadavre-exquis helm/ -f helm/values.yaml --namespace cce --create-namespace
+        helm install cloud-cadavre-exquis helm/ -f helm/values.yaml --namespace cce --create-namespace --set dispatcher.domain=192.168.50.10
       args:
         chdir: '{{ playbook_dir }}'
-
-    - name: Install ingress traefik
-      shell: |
-        kubectl apply -f ingress.yaml
 
     # - name: Install Prometheus & Grafana
     #   shell: |
