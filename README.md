@@ -31,4 +31,7 @@ bash destroyClusterKube.sh
     <a href="https://www.ansible.com/" target="_blank" rel="noreferrer">
         <img src="https://www.vectorlogo.zone/logos/ansible/ansible-icon.svg" alt="ansible" width="40" height="40"/>
     </a>
+    <a href="https://helm.sh/" target="_blank" rel="noreferrer">
+        <img src="https://www.vectorlogo.zone/logos/helmsh/helmsh-icon.svg" alt="helm" width="40" height="40"/>
+    </a>
 </p>
