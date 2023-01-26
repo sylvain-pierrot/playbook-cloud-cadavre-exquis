@@ -150,3 +150,9 @@
     - name: Install ingress traefik
       shell: |
         kubectl apply -f ingress.yaml
+
+    # - name: Install Prometheus & Grafana
+    #   shell: |
+    #     helm repo add prom-repo https://prometheus-community.github.io/helm-charts
+    #     helm repo update
+    #     helm install monitoring prom-repo/kube-prometheus-stack
