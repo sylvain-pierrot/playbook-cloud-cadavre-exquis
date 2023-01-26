@@ -1,11 +1,10 @@
-- name: Deploy Cluster K3s with 1 Master and 2 Nodes Worker
+- name: Deploy "cloud-cadavre-exquis" application on Cluster K3s
   hosts: localhost
   connection: local
   gather_facts: false
   vars:
-    - PATH: /home/pierrots/Atos/ansible/playbook-cloud-cadavre-exquis
-    - IP_MASTER: "192.168.50.10"
-
+    IP_MASTER: "192.168.50.10"
+  
   tasks:
     ## Checks install
     # # vagrant
@@ -18,6 +17,7 @@
     #   become: true
     #   apt:
     #     name: vagrant
+    # vagrant plugin install vagrant-env
     #   when: vagrant_check.rc != 0
 
     # # kubectl
@@ -78,13 +78,13 @@
       command: |
         vagrant up
       args:
-        chdir: "{{ PATH }}"
+        chdir: '{{ playbook_dir }}'
 
     - name: Install K3s Control Plane on first VM
       shell: |
         vagrant ssh node-1-master -c "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"--flannel-backend=none --disable-network-policy --cluster-cidr=192.168.0.0/16\" sh -"
       args:
-        chdir: "{{ PATH }}"
+        chdir: '{{ playbook_dir }}'
 
     - name: Retrieve Cluster context and node-token
       shell: |
@@ -94,14 +94,14 @@
         sed -i 's/127.0.0.1/192.168.50.10/g' /tmp/tempconfig
         KUBECONFIG=~/.kube/config:/tmp/tempconfig kubectl config view --flatten > ~/.kube/config
       args:
-        chdir: "{{ PATH }}"
+        chdir: '{{ playbook_dir }}'
   
     - name: Install k3s Worker on others VMs
       shell: |
         vagrant ssh node-2-worker -c "curl -sfL https://get.k3s.io | K3S_URL=https://{{ IP_MASTER }}:6443 K3S_TOKEN=$(cat /tmp/tempnodetoken) sh -"
         vagrant ssh node-3-worker -c "curl -sfL https://get.k3s.io | K3S_URL=https://{{ IP_MASTER }}:6443 K3S_TOKEN=$(cat /tmp/tempnodetoken) sh -"
       args:
-        chdir: "{{ PATH }}"
+        chdir: '{{ playbook_dir }}'
 
     - name: Switch to the new context
       shell: |
@@ -118,16 +118,16 @@
       command: |
         kubectl wait --for=condition=Ready node --all
       retries: 20
-      delay: 10
+      delay: 30
       register: nodes_status
       until: nodes_status.rc == 0
       ignore_errors: true
 
-    - name: Wait for pods running --namespace=kube-system
-      command: |
-        kubectl wait --for=condition=Ready --namespace=kube-system --namespace pod --all
-      retries: 20
-      delay: 10
+    - name: Wait for pods status "Running" or "Succeeded"
+      script:
+        cmd: checkPodsRunningOrSucceeded.sh
+      retries: 50
+      delay: 30
       register: pods_status
       until: pods_status.rc == 0
       ignore_errors: true
@@ -135,9 +135,9 @@
     # - name: Taint node Master NoSchedule
     #   shell: |
     #     kubectl taint node node-1-master k3s-controlplane=true:NoSchedule
-    #     kubectl edit deployments local-path-provisioner -n kube-system
-    #     kubectl edit deployments local-path-provisioner -n calico-system
-    #     kubectl edit deployments local-path-provisioner -n calico-apiserver
+    #     kubectl edit deployments local-playbook_dir-provisioner -n kube-system
+    #     kubectl edit deployments local-playbook_dir-provisioner -n calico-system
+    #     kubectl edit deployments local-playbook_dir-provisioner -n calico-apiserver
 
     - name: Install cloud-cadavre-exquis
       shell: |
@@ -145,7 +145,7 @@
         cd cloud-cadavre-exquis
         helm install cloud-cadavre-exquis helm/ -f helm/values.yaml --namespace cce --create-namespace
       args:
-        chdir: "{{ PATH }}"
+        chdir: '{{ playbook_dir }}'
 
     - name: Install ingress traefik
       shell: |
