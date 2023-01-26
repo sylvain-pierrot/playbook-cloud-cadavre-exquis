@@ -1,5 +1,6 @@
 #! /usr/bin/bash
 
+cd src
 vagrant destroy -f
 
 kubectl config unset clusters.cce
