@@ -129,7 +129,7 @@
     - name: Install cloud-cadavre-exquis
       shell: |
         cd cloud-cadavre-exquis
-        helm install cloud-cadavre-exquis helm/ -f helm/values.yaml --namespace cce --create-namespace --set dispatcher.domain=192.168.50.10
+        helm install cloud-cadavre-exquis helm/ -f helm/values.yaml --namespace {{ NAME }} --create-namespace --set dispatcher.domain={{ IP_MASTER }}
       args:
         chdir: '{{ playbook_dir }}'
 
