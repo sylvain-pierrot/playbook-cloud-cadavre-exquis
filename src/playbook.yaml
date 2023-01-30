@@ -1,10 +1,10 @@
-- name: Deploy "cloud-cadavre-exquis" application on Cluster K3s
+- name: Deploy "cloud-cadavre-exquis"
   hosts: localhost
   connection: local
   gather_facts: false
   vars:
     IP_MASTER: "192.168.50.10"
-  
+    NAME: "cce"
   tasks:
     ## Checks install
     # # vagrant
@@ -74,40 +74,15 @@
     #   when: git_check.rc != 0
 
     ## Main tasks
-    - name: Provision 3 VMs
-      command: |
-        vagrant up
-      args:
-        chdir: '{{ playbook_dir }}'
-
-    - name: Install K3s Control Plane on first VM
+    - name: Provision kubernetes cluster
       shell: |
-        vagrant ssh node-1-master -c "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC=\"--flannel-backend=none --disable-network-policy --cluster-cidr=192.168.0.0/16\" sh -"
-      args:
-        chdir: '{{ playbook_dir }}'
-
-    - name: Retrieve Cluster context and node-token
-      shell: |
-        vagrant ssh node-1-master -c "sudo cat /var/lib/rancher/k3s/server/node-token" > /tmp/tempnodetoken
-        vagrant ssh node-1-master -c "sudo cat /etc/rancher/k3s/k3s.yaml" > /tmp/tempconfig
-        sed -i 's/default/cce/g' /tmp/tempconfig
-        sed -i 's/127.0.0.1/192.168.50.10/g' /tmp/tempconfig
-        KUBECONFIG=~/.kube/config:/tmp/tempconfig kubectl config view --flatten > ~/.kube/config
-      args:
-        chdir: '{{ playbook_dir }}'
-  
-    - name: Install k3s Worker on others VMs
-      shell: |
-        vagrant ssh node-2-worker -c "curl -sfL https://get.k3s.io | K3S_URL=https://{{ IP_MASTER }}:6443 K3S_TOKEN=$(cat /tmp/tempnodetoken) sh -"
-        vagrant ssh node-3-worker -c "curl -sfL https://get.k3s.io | K3S_URL=https://{{ IP_MASTER }}:6443 K3S_TOKEN=$(cat /tmp/tempnodetoken) sh -"
+        VAGRANT_NO_PARALLEL=yes vagrant up
       args:
         chdir: '{{ playbook_dir }}'
 
     - name: Switch to the new context
       shell: |
-        rm /tmp/tempconfig
-        rm /tmp/tempnodetoken
-        kubectx cce
+        kubectx {{ NAME }}
 
     - name: Install Calico
       shell: |
@@ -139,9 +114,20 @@
     #     kubectl edit deployments local-playbook_dir-provisioner -n calico-system
     #     kubectl edit deployments local-playbook_dir-provisioner -n calico-apiserver
 
-    - name: Install cloud-cadavre-exquis
+    - name: Checking if cloud-cadavre-exquis exists
+      stat:
+        path: "{{ playbook_dir }}/cloud-cadavre-exquis"
+      register: folder
+
+    - name: Git clone cloud-cadavre-exquis if it doesn't already exists
       shell: |
         git clone https://github.com/fteychene/cloud-cadavre-exquis.git
+      when: not folder.stat.exists
+      args:
+        chdir: '{{ playbook_dir }}'
+
+    - name: Install cloud-cadavre-exquis
+      shell: |
         cd cloud-cadavre-exquis
         helm install cloud-cadavre-exquis helm/ -f helm/values.yaml --namespace cce --create-namespace --set dispatcher.domain=192.168.50.10
       args:

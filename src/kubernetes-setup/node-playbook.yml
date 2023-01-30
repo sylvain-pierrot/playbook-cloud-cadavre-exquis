@@ -1,0 +1,9 @@
+- name: Install Worker Node
+  hosts: all
+  gather_facts: false
+  become: false
+  vars:
+    NODE_TOKEN: "{{ lookup('file', '/tmp/tempnodetoken') }}"
+  tasks:
+    - name: Install k3s Worker
+      shell: curl -sfL https://get.k3s.io | K3S_URL=https://{{ node_ip }}:6443 K3S_TOKEN={{ NODE_TOKEN }} sh -

@@ -1,6 +1,6 @@
 <h3 align="center">Playbook to run Cluster Multi-Machine K3s</h3>
 
-## Application accessible locally on the ip:
+## Application accessible locally on the IP Address:
 
 *192.168.50.10*
 
@@ -10,7 +10,7 @@
 bash deployClusterKube.sh
 ```
 
-## Destroy cluster:
+## Destroy Cluster:
 
 ```bash
 bash destroyClusterKube.sh

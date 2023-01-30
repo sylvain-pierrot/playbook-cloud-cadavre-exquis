@@ -1,0 +1,29 @@
+- name: Install Master Node
+  hosts: all
+  gather_facts: false
+  become: false
+  vars:
+    NAME: "cce"
+  tasks:
+    - name: Install K3s Control Plane
+      shell: curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--flannel-backend=none --disable-network-policy --cluster-cidr=192.168.0.0/16" sh -
+
+    - name: Retrieve Cluster context
+      command: sudo cat /etc/rancher/k3s/k3s.yaml
+      register: context
+
+    - name: Retrieve node-token
+      command: sudo cat /var/lib/rancher/k3s/server/node-token
+      register: node_token
+
+    - name: Copy cluster_context to local file
+      local_action: copy content="{{ context.stdout }}" dest="/tmp/tempconfig"
+
+    - name: Copy node-token to local file
+      local_action: copy content="{{ node_token.stdout_lines[0] }}" dest="/tmp/tempnodetoken"
+
+    - name: Add Cluster context to the host system
+      local_action: shell
+        sed -i 's/default/{{ NAME }}/g' /tmp/tempconfig &&
+        sed -i 's/127.0.0.1/{{ node_ip }}/g' /tmp/tempconfig &&
+        KUBECONFIG=~/.kube/config:/tmp/tempconfig kubectl config view --flatten > ~/.kube/config

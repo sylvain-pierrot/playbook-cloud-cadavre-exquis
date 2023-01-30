@@ -1,32 +1,44 @@
 Vagrant.configure("2") do |config|
+  config.ssh.insert_key = false
   config.env.enable # Enable vagrant-env(.env)
 
-  config.vm.define "node-1-master", primary: true do |subconfig|
-    # Configure Master
-    subconfig.vm.provider :libvirt do |libvirt|
+  # VM Master
+  config.vm.define "k8s-master", primary: true do |master|
+    master.vm.provider :libvirt do |libvirt|
       libvirt.cpus = 2
       libvirt.memory = 2048
-      libvirt.machine_virtual_size = 20
+      # libvirt.machine_virtual_size = 20
     end
-    subconfig.vm.box = ENV['BOX_IMAGE']
-    subconfig.vm.hostname = "node-1-master"
-    subconfig.vm.network :private_network, ip: "192.168.50.10", netmask: "255.255.255.0"
-
+    master.vm.box = ENV['BOX_IMAGE']
+    master.vm.network :private_network, ip: "192.168.50.10", netmask: "255.255.255.0"
+    master.vm.hostname = "k8s-master"
+    master.vm.provision "ansible" do |ansible|
+      ansible.verbose = "v"
+      ansible.playbook = "kubernetes-setup/master-playbook.yml"
+      ansible.extra_vars = {
+          node_ip: "192.168.50.10",
+      }
+    end
   end
 
-  # Number of VMs Worker
-  (2..ENV['NODE_COUNT'].to_i).each do |i|
-    config.vm.define "node-#{i}-worker" do |subconfig|
-      # Configure Worker
-      subconfig.vm.provider :libvirt do |libvirt|
+  # VMs Worker
+  (1..ENV['NODE_COUNT'].to_i).each do |i|
+    config.vm.define "node-#{i}" do |node|
+      node.vm.provider :libvirt do |libvirt|
         libvirt.cpus = 2
         libvirt.memory = 2048
-        libvirt.machine_virtual_size = 20
+        # libvirt.machine_virtual_size = 20
       end
-      subconfig.vm.box = ENV['BOX_IMAGE']
-      subconfig.vm.hostname = "node-#{i}-worker"
-      subconfig.vm.network :private_network, ip: "192.168.50.#{i + 10}", netmask: "255.255.255.0"
-      
+      node.vm.box = ENV['BOX_IMAGE']
+      node.vm.network :private_network, ip: "192.168.50.#{i + 10}", netmask: "255.255.255.0"
+      node.vm.hostname = "node-#{i}"
+      node.vm.provision "ansible" do |ansible|
+        ansible.verbose = "v"
+        ansible.playbook = "kubernetes-setup/node-playbook.yml"
+        ansible.extra_vars = {
+            node_ip: "192.168.50.10",
+        }
+      end
     end
   end
 end
